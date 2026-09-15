@@ -49,9 +49,10 @@ async def fetch_download_link(
             logging.error("Could not extract surl from URL")
             return {"error": "Invalid URL format", "errno": -1}
         
-        # Remove leading "1" if present (TeraBox shortcode format)
-        if surl.startswith("1"):
-            surl = surl[1:]
+# Remove leading "1" only for the 23-character TeraBox shortcode format.
+# Keep other surl values unchanged.
+if len(surl) == 23 and surl.startswith("1"):
+    surl = surl[1:]
         
         # We will attempt with loaded cookies first, and retry without cookies if blocked by verification
         initial_cookies = load_cookies()
