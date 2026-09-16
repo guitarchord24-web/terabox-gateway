@@ -376,6 +376,111 @@ async def api():
             500,
         )
 
+@app.route("/player", methods=["GET"])
+def video_player():
+    """Video-only player for TeraBox share links."""
+    url = request.args.get("url", "").strip()
+
+    if not url:
+        return """
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family:Arial;text-align:center;padding:40px">
+            <h3>Video Player</h3>
+            <p>Parameter URL belum diberikan.</p>
+        </body>
+        </html>
+        """, 400
+
+    if not is_valid_share_url(url):
+        return """
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family:Arial;text-align:center;padding:40px">
+            <h3>Invalid TeraBox URL</h3>
+        </body>
+        </html>
+        """, 400
+
+    from urllib.parse import quote
+
+    stream_url = (
+        "/api?mode=stream&surl="
+        + quote(url, safe="")
+    )
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1.0">
+
+        <title>Video</title>
+
+        <style>
+            html, body {{
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                background: #000;
+                overflow: hidden;
+            }}
+
+            video {{
+                width: 100vw;
+                height: 100vh;
+                display: block;
+                background: #000;
+                object-fit: contain;
+            }}
+        </style>
+    </head>
+
+    <body>
+
+        <video
+            id="video"
+            controls
+            playsinline
+            preload="metadata"
+        ></video>
+
+        <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+        <script>
+            const video = document.getElementById("video");
+            const streamUrl = {stream_url!r};
+
+            if (video.canPlayType("application/vnd.apple.mpegurl")) {{
+                video.src = streamUrl;
+            }}
+            else if (Hls.isSupported()) {{
+                const hls = new Hls({{
+                    enableWorker: true,
+                    lowLatencyMode: false
+                }});
+
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.ERROR, function(event, data) {{
+                    console.error("HLS error:", data);
+                }});
+            }}
+            else {{
+                document.body.innerHTML =
+                    '<div style="color:white;text-align:center;padding:40px">' +
+                    'Browser tidak mendukung pemutaran video ini.' +
+                    '</div>';
+            }}
+        </script>
+
+    </body>
+    </html>
+    """
 
 @app.route("/admin/<path:subpath>", methods=["GET"])
 @rate_limit
