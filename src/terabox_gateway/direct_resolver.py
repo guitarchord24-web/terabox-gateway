@@ -183,4 +183,4 @@ async def resolve_direct(
 
         raise RuntimeError(
             last_error or "All TeraBox upstreams failed"
-      )
+                    )
